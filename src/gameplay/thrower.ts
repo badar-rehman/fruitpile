@@ -16,14 +16,23 @@ export interface ThrowSolution {
   risky: boolean;
 }
 
-const ARC_DOTS = 26;
+// Covers the worst case: one point per raycast step below, plus the origin.
+const ARC_MAX_POINTS = 72;
+// The trail fades from near-invisible at the thrower to a faint wisp at landing,
+// so it traces the shot without ever blocking the view of the pile.
+const ARC_ALPHA_START = 0.4;
+const ARC_ALPHA_END = 0.04;
+const ARC_COLOR = new THREE.Color(0xfffdf5);
 const GRAVITY = Math.abs(CONFIG.physics.gravity);
 
 /** Holds the next fruit, turns drag input into a launch, and draws the aim. */
 export class Thrower {
   private readonly group = new THREE.Group();
   private readonly holder = new THREE.Group();
-  private readonly arc: THREE.InstancedMesh;
+  private readonly arc: THREE.Line;
+  private readonly arcGeometry: THREE.BufferGeometry;
+  private readonly arcPositions = new Float32Array(ARC_MAX_POINTS * 3);
+  private readonly arcColors = new Float32Array(ARC_MAX_POINTS * 4);
   private readonly landingRing: THREE.Mesh;
   private readonly powerRing: THREE.Mesh;
   private held: THREE.Object3D | null = null;
@@ -45,18 +54,31 @@ export class Thrower {
     private readonly physics: PhysicsWorld,
     private readonly rig: CameraRig,
   ) {
-    const dotGeometry = new THREE.SphereGeometry(0.045, 6, 5);
-    const dotMaterial = new THREE.MeshBasicMaterial({ color: 0xfffdf5, transparent: true, opacity: 0.9 });
-    this.arc = new THREE.InstancedMesh(dotGeometry, dotMaterial, ARC_DOTS);
+    this.arcGeometry = new THREE.BufferGeometry();
+    this.arcGeometry.setAttribute(
+      'position',
+      new THREE.BufferAttribute(this.arcPositions, 3).setUsage(THREE.DynamicDrawUsage),
+    );
+    this.arcGeometry.setAttribute(
+      'color',
+      new THREE.BufferAttribute(this.arcColors, 4).setUsage(THREE.DynamicDrawUsage),
+    );
+    this.arcGeometry.setDrawRange(0, 0);
+    const arcMaterial = new THREE.LineBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      depthWrite: false,
+    });
+    this.arc = new THREE.Line(this.arcGeometry, arcMaterial);
     this.arc.frustumCulled = false;
-    this.arc.count = 0;
 
     this.landingRing = new THREE.Mesh(
-      new THREE.RingGeometry(0.24, 0.36, 32),
+      // Noticeably thinner band than before, and see-through rather than solid.
+      new THREE.RingGeometry(0.28, 0.33, 32),
       new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 1,
+        opacity: 0.35,
         side: THREE.DoubleSide,
         depthTest: false,
       }),
@@ -142,9 +164,17 @@ export class Thrower {
     const dir = _c;
     solution.impact = null;
 
-    this.arc.count = 0;
-    const matrix = new THREE.Matrix4();
-    let dotIndex = 0;
+    const positions = this.arcPositions;
+    let count = 0;
+    const pushPoint = (p: THREE.Vector3) => {
+      if (count >= ARC_MAX_POINTS) return;
+      positions[count * 3] = p.x;
+      positions[count * 3 + 1] = p.y;
+      positions[count * 3 + 2] = p.z;
+      count++;
+    };
+
+    pushPoint(solution.origin);
 
     for (let i = 0; i < 70; i++) {
       const t = (i + 1) * step;
@@ -165,23 +195,29 @@ export class Thrower {
           const impact = point.clone().addScaledVector(dir, hit.timeOfImpact);
           solution.impact = impact;
           solution.impactNormal.set(hit.normal.x, hit.normal.y, hit.normal.z);
+          pushPoint(impact);
           break;
         }
       }
 
-      // Skip the first samples: right under the camera they read as blobs.
-      if (dotIndex < ARC_DOTS && i >= 3 && i % 3 === 0) {
-        matrix.makeTranslation(next.x, next.y, next.z);
-        matrix.scale(_scale.setScalar(1));
-        this.arc.setMatrixAt(dotIndex++, matrix);
-      }
-
+      pushPoint(next);
       point.copy(next);
       if (next.y < CONFIG.plate.tableY) break;
     }
 
-    this.arc.count = dotIndex;
-    this.arc.instanceMatrix.needsUpdate = true;
+    // Bright near the thrower, fading to almost nothing by the time it reaches the ring.
+    const colors = this.arcColors;
+    for (let i = 0; i < count; i++) {
+      const alpha = lerp(ARC_ALPHA_START, ARC_ALPHA_END, count > 1 ? i / (count - 1) : 0);
+      colors[i * 4] = ARC_COLOR.r;
+      colors[i * 4 + 1] = ARC_COLOR.g;
+      colors[i * 4 + 2] = ARC_COLOR.b;
+      colors[i * 4 + 3] = alpha;
+    }
+
+    this.arcGeometry.setDrawRange(0, count);
+    this.arcGeometry.attributes.position.needsUpdate = true;
+    this.arcGeometry.attributes.color.needsUpdate = true;
 
     const impact = solution.impact;
     solution.risky =
@@ -222,7 +258,7 @@ export class Thrower {
         charge > 0.85 ? 0xff8b5e : charge > 0.55 ? 0xffd166 : 0x8de8a1,
       );
     } else {
-      this.arc.count = 0;
+      this.arcGeometry.setDrawRange(0, 0);
       this.arc.visible = false;
       this.landingRing.visible = false;
       this.powerRing.visible = false;
@@ -236,6 +272,5 @@ const _a = new THREE.Vector3();
 const _b = new THREE.Vector3();
 const _c = new THREE.Vector3();
 const _origin = new THREE.Vector3();
-const _scale = new THREE.Vector3();
 const _dir = new THREE.Vector3();
 const _ray = new RAPIER.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
