@@ -27,17 +27,13 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Download butler
-        run: |
-          mkdir -p ./butler-bin
-          cd ./butler-bin
-          curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/butler.zip
-          unzip butler.zip
-          chmod +x butler
-          cd ..
-
-      - name: Deploy to itch.io
-        run: |
-          ./butler-bin/butler push dist badar-rehman/fruitpile:html5 --userversion=${{ github.sha }}
+      - name: Deploy to itch.io with butler
+        uses: josephbmanley/butler-publish-itchio@master
+        with:
+          butler-version: latest
+          game-owner: badar-rehman
+          game-name: fruitpile
+          itch-channel: html5
+          files: dist
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
