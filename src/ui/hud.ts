@@ -1,11 +1,13 @@
 import { CONFIG } from '../config';
 import { TIERS } from '../gameplay/tiers';
+import { haptics } from '../audio/haptics';
 
 export interface HudCallbacks {
   onRotate: (direction: number) => void;
   onStart: () => void;
   onRestart: () => void;
   onToggleMute: (muted: boolean) => void;
+  onToggleHaptics: (enabled: boolean) => void;
 }
 
 const hex = (value: number): string => `#${value.toString(16).padStart(6, '0')}`;
@@ -82,6 +84,19 @@ export class Hud {
       this.callbacks.onToggleMute(this.muted);
     });
 
+    // Only shown on devices where vibration can actually do anything.
+    let hapticsButton: HTMLButtonElement | null = null;
+    if (haptics.supported) {
+      hapticsButton = el('button', 'haptics', '\u{1F4F3}');
+      let hapticsOn = true;
+      hapticsButton.addEventListener('click', () => {
+        hapticsOn = !hapticsOn;
+        hapticsButton!.textContent = hapticsOn ? '\u{1F4F3}' : '\u{1F4F4}';
+        hapticsButton!.classList.toggle('off', !hapticsOn);
+        this.callbacks.onToggleHaptics(hapticsOn);
+      });
+    }
+
     this.debugBox = el('div', 'debug');
     this.popupLayer = el('div', 'popup-layer');
 
@@ -101,6 +116,7 @@ export class Hud {
       right,
       this.hint,
       mute,
+      ...(hapticsButton ? [hapticsButton] : []),
       this.debugBox,
       this.popupLayer,
       this.titleScreen,

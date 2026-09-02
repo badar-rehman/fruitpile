@@ -250,6 +250,21 @@ html, body {
   cursor: pointer;
 }
 
+.haptics {
+  position: absolute;
+  top: calc(max(12px, env(safe-area-inset-top)) + 120px);
+  right: max(12px, env(safe-area-inset-right));
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  font-size: 17px;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.haptics.off { opacity: 0.55; }
+
 .debug {
   position: absolute;
   top: calc(max(12px, env(safe-area-inset-top)) + 52px);

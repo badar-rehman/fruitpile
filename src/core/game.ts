@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config';
 import { sfx } from '../audio/sfx';
+import { haptics } from '../audio/haptics';
 import { SpawnBag, Rng } from './rng';
 import { bus } from './events';
 import { loadNumber, saveNumber } from './storage';
@@ -58,6 +59,7 @@ export class Game {
       onStart: () => this.startRun(),
       onRestart: () => void this.restart(),
       onToggleMute: (muted) => sfx.setMuted(muted),
+      onToggleHaptics: (enabled) => haptics.setEnabled(enabled),
     });
     this.popups = new ScorePopups(this.hud.popupLayer);
     this.input = new InputController(canvas, this.rig);
@@ -140,6 +142,7 @@ export class Game {
     this.thrower.setVisible(false);
     poki.gameplayStop();
     sfx.gameOver();
+    haptics.gameOver();
 
     const isNewBest = this.score > this.best;
     if (isNewBest) {
@@ -173,6 +176,7 @@ export class Game {
     this.throws++;
     this.throwDirty = false;
     sfx.throwFruit(charge);
+    haptics.throwFruit(charge);
     bus.emit('throw', { tier, charge });
   }
 
@@ -184,6 +188,7 @@ export class Game {
       this.addScore(event.score, event.position);
       this.hud.setChain(event.chainStep);
       sfx.merge(event.tier, event.chainStep);
+      haptics.merge(event.chainStep);
 
       this.particles.burst(event.position, tier.color, event.isFinal ? 40 : 10 + event.tier * 2, 2 + event.tier * 0.4);
       this.particles.burst(event.position, tier.accent, 6 + event.tier, 1.6 + event.tier * 0.3);
@@ -193,16 +198,23 @@ export class Game {
       if (event.tier >= CONFIG.juice.hitstopFromTier || event.isFinal) {
         this.hitstop = Math.max(this.hitstop, CONFIG.juice.hitstopMs / 1000);
       }
-      if (event.isFinal) sfx.celebrate();
+      if (event.isFinal) {
+        sfx.celebrate();
+        haptics.celebrate();
+      }
     });
 
     bus.on('newTier', (event) => {
       this.hud.markDiscovered(event.tier);
-      if (event.tier >= 5) sfx.celebrate();
+      if (event.tier >= 5) {
+        sfx.celebrate();
+        haptics.celebrate();
+      }
     });
 
     bus.on('land', (event) => {
       sfx.land(event.tier, event.impact);
+      haptics.land(event.impact);
       if (event.impact > 0.25) {
         this.particles.burst(event.position, 0xfff0d0, Math.round(2 + event.impact * 5), 1.2);
         this.rig.addShake(event.impact * 0.06);
@@ -212,6 +224,7 @@ export class Game {
     bus.on('fall', (event) => {
       sfx.fall();
       sfx.strike(event.strikesLeft);
+      haptics.strike();
       this.hud.setStrikes(event.strikesLeft);
       this.hud.flashStrike();
       this.popups.spawn(event.position, 'DROPPED!', 'bad');
