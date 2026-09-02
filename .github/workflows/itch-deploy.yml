@@ -28,12 +28,10 @@ jobs:
         run: npm run build
 
       - name: Deploy to itch.io with butler
-        uses: josephbmanley/butler-publish-itchio@master
-        with:
-          butler-version: latest
-          game-owner: badar-rehman
-          game-name: fruitpile
-          itch-channel: html5
-          files: dist
+        uses: yeslayla/butler-publish-itchio-action@master
         env:
-          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          BUTLER_CREDENTIALS: ${{ secrets.BUTLER_API_KEY }}
+          CHANNEL: html5
+          ITCH_GAME: fruitpile
+          ITCH_USER: badar-rehman
+          PACKAGE: dist
