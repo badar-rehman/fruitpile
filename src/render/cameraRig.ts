@@ -35,6 +35,16 @@ export class CameraRig {
     this.radius = clamp(this.radius + delta, CONFIG.camera.minRadius, CONFIG.camera.maxRadius);
   }
 
+  /** Pushes a dev-panel radius tweak straight into the live rig, unclamped. */
+  setRadius(radius: number): void {
+    this.radius = radius;
+  }
+
+  /** Pushes a dev-panel target tweak straight into the live rig. */
+  setTarget(x: number, y: number, z: number): void {
+    this.target.set(x, y, z);
+  }
+
   addShake(amount: number): void {
     this.shake = Math.min(1.2, this.shake + amount);
   }

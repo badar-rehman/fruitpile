@@ -17,6 +17,7 @@ import { createPhysicsWorld, initRapier, type PhysicsWorld } from '../physics/wo
 import { InputController } from '../platform/input';
 import { poki } from '../platform/poki';
 import { Hud } from '../ui/hud';
+import { DevPanel } from '../dev/panel';
 
 type State = 'title' | 'playing' | 'over';
 
@@ -76,6 +77,8 @@ export class Game {
     this.physics = createPhysicsWorld();
     this.pile = new Pile(this.physics, this.kit.fruitLayer);
     this.thrower = new Thrower(this.kit.scene, this.physics, this.rig);
+    new DevPanel(this.rig, this.thrower);
+    this.thrower.setResolution(window.innerWidth, window.innerHeight);
 
     this.wireEvents();
     this.input.canThrow = () => this.state === 'playing' && this.thrower.cooldown <= 0;
@@ -292,6 +295,7 @@ export class Game {
     this.kit.renderer.setSize(width, height, false);
     this.kit.renderer.setPixelRatio(this.quality.pixelRatio);
     this.rig.setAspect(width / height);
+    this.thrower?.setResolution(width, height);
   };
 
   private onVisibility = (): void => {

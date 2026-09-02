@@ -1,5 +1,8 @@
 import './ui/styles.css';
+import { loadOverrides } from './dev/overrides';
 import { Game } from './core/game';
+
+loadOverrides();
 
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
 const uiRoot = document.getElementById('ui-root') as HTMLElement;

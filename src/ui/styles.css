@@ -23,6 +23,10 @@ html, body {
   overscroll-behavior: none;
 }
 
+/* lil-gui appends its own root to <body>; keep its internal drag/slider
+   interactions working despite the page-wide touch-action: none above. */
+.lil-gui { touch-action: auto; }
+
 #app { position: fixed; inset: 0; }
 #game-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 

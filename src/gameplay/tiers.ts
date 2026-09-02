@@ -1,11 +1,12 @@
 export interface FruitTier {
   readonly index: number;
   readonly name: string;
-  readonly radius: number;
-  readonly award: number;
+  /** Tweakable via the dev panel; affects fruit spawned after the change. */
+  radius: number;
+  award: number;
   /** Base flesh/skin colour used by the procedural builder. */
-  readonly color: number;
-  readonly accent: number;
+  color: number;
+  accent: number;
   readonly emoji: string;
 }
 
@@ -14,7 +15,7 @@ export interface FruitTier {
  * Awards follow the Suika-style triangular curve: the top of the chain is
  * worth far more than the sum of the small merges that fed it.
  */
-export const TIERS: readonly FruitTier[] = [
+export const TIERS: FruitTier[] = [
   { index: 0, name: 'Blueberry', radius: 0.12, award: 1, color: 0x4a5bb8, accent: 0x8fa3e8, emoji: '🫐' },
   { index: 1, name: 'Strawberry', radius: 0.15, award: 3, color: 0xe23b52, accent: 0xffd25e, emoji: '🍓' },
   { index: 2, name: 'Kiwano', radius: 0.185, award: 6, color: 0xe8a022, accent: 0xffd77a, emoji: '🥭' },
@@ -33,3 +34,6 @@ export const MAX_TIER = TIERS.length - 1;
 export function tierOf(index: number): FruitTier {
   return TIERS[Math.min(Math.max(index, 0), MAX_TIER)];
 }
+
+/** Frozen-in-time snapshot of the tiers above, for the dev panel's reset. */
+export const DEFAULT_TIERS: FruitTier[] = JSON.parse(JSON.stringify(TIERS));
