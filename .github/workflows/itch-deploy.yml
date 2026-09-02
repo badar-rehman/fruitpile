@@ -1,0 +1,43 @@
+name: Deploy to itch.io
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Download butler
+        run: |
+          mkdir -p ./butler-bin
+          cd ./butler-bin
+          curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/butler.zip
+          unzip butler.zip
+          chmod +x butler
+          cd ..
+
+      - name: Deploy to itch.io
+        run: |
+          ./butler-bin/butler push dist badar-rehman/fruitpile:html5 --userversion=${{ github.sha }}
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
