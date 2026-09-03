@@ -116,6 +116,10 @@ export class Game {
     this.state = 'playing';
     this.thrower.setVisible(true);
     poki.gameplayStart();
+    // Progression funnel: one 'run' attempt per playthrough, paired with the
+    // 'complete' sent from endRun() - shows how many players who start a run
+    // actually see it through to game over.
+    poki.measure('run', 'default', 'start');
   }
 
   private async restart(): Promise<void> {
@@ -143,6 +147,7 @@ export class Game {
     poki.gameplayStop();
     sfx.gameOver();
     haptics.gameOver();
+    poki.measure('run', 'default', 'complete');
 
     const isNewBest = this.score > this.best;
     if (isNewBest) {
@@ -206,6 +211,9 @@ export class Game {
 
     bus.on('newTier', (event) => {
       this.hud.markDiscovered(event.tier);
+      // Progression funnel: one 'start' per tier the first time this run
+      // reaches it, showing where in the fruit ladder players drop off.
+      poki.measure('tier', TIERS[event.tier].name.toLowerCase(), 'start');
       if (event.tier >= 5) {
         sfx.celebrate();
         haptics.celebrate();
