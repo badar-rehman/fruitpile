@@ -129,7 +129,7 @@ export const CONFIG: GameConfig = {
   throw: {
     cameraGap: 1.75,
     minOriginDistance: 2.2,
-    originHeight: 1.25,
+    originHeight: 1.6,
     pitchDeg: 52,
     landNear: -2.0,
     landFar: 2.6,
@@ -190,16 +190,16 @@ export const CONFIG: GameConfig = {
 
   trajectory: {
     color: 0xfffdf5,
-    opacity: 0.5,
-    thicknessPx: 2.5,
+    opacity: 0.7,
+    thicknessPx: 5,
   },
 
   landingRing: {
     innerRadius: 0.28,
     outerRadius: 0.33,
-    opacity: 0.35,
+    opacity: 0.7,
     safeColor: 0xffffff,
-    riskyColor: 0xffb03a,
+    riskyColor: 0xff8000,
   },
 };
 
