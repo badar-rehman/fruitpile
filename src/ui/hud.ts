@@ -75,7 +75,14 @@ export class Hud {
     bindHold(left, () => this.callbacks.onRotate(-1), () => this.callbacks.onRotate(0));
     bindHold(right, () => this.callbacks.onRotate(1), () => this.callbacks.onRotate(0));
 
-    this.hint = el('div', 'hint', 'Drag down to charge • release to toss • drag the sides to look around');
+    // Wordless tutorial: an animated hand pantomimes press-drag-release, on
+    // loop, above the held fruit. No text so it reads the same in any locale.
+    this.hint = el('div', 'hint');
+    this.hint.append(
+      el('div', 'hint-trail'),
+      el('div', 'hint-release'),
+      el('div', 'hint-hand', '\u{1F446}'),
+    );
 
     const mute = el('button', 'mute', '\u{1F50A}');
     mute.addEventListener('click', () => {
