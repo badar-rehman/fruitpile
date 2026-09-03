@@ -353,6 +353,8 @@ export class DevPanel {
       boxSizing: 'border-box',
       font: '12px ui-monospace, monospace',
       resize: 'vertical',
+      userSelect: 'text',
+      webkitUserSelect: 'text',
     } as CSSStyleDeclaration);
     textarea.readOnly = true;
 
