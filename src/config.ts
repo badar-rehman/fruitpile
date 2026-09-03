@@ -129,7 +129,7 @@ export const CONFIG: GameConfig = {
   throw: {
     cameraGap: 1.75,
     minOriginDistance: 2.2,
-    originHeight: 1.6,
+    originHeight: 1.25,
     pitchDeg: 52,
     landNear: -2.0,
     landFar: 2.6,

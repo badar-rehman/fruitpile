@@ -117,12 +117,14 @@ export class Thrower {
 
   /** Where the fruit is held: a fixed gap in front of wherever the camera is. */
   originFor(out = new THREE.Vector3()): THREE.Vector3 {
-    const distance = Math.max(
-      CONFIG.throw.minOriginDistance,
-      this.rig.boom - CONFIG.throw.cameraGap,
-    );
+    const boom = this.rig.boom;
+    const distance = Math.max(CONFIG.throw.minOriginDistance, boom - CONFIG.throw.cameraGap);
     this.rig.horizontalDirection(out).multiplyScalar(distance);
-    out.y = CONFIG.throw.originHeight;
+    // The camera's own height scales with boom/radius so it always looks at
+    // the plate from the same angle regardless of zoom (see CameraRig.update).
+    // Scale the held fruit's height the same way, or it drifts out of the
+    // view cone at the zoom extremes as the camera's eye-line moves past it.
+    out.y = CONFIG.throw.originHeight * (boom / CONFIG.camera.radius);
     return out;
   }
 
