@@ -1,0 +1,43 @@
+# Build the Vite game and package it as a Poki-ready zip (index.html at the
+# zip root, no dev tooling) - download the artifact from this workflow run
+# and upload it manually to Poki's submission portal.
+name: Build Poki package
+
+on:
+  push:
+    branches: ["poki"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Zip the build (index.html at the zip root)
+        run: |
+          cd dist
+          zip -r ../fruitpile-poki-build.zip .
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fruitpile-poki-build
+          path: fruitpile-poki-build.zip
+          retention-days: 30
