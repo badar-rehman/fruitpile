@@ -211,7 +211,7 @@ html, body {
   position: absolute;
   top: 0;
   left: 50%;
-  font-size: 34px;
+  font-size: 68px;
   line-height: 1;
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
   transform: translate(-50%, 0) scale(1);
