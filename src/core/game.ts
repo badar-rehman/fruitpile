@@ -14,6 +14,7 @@ import { CameraRig } from '../render/cameraRig';
 import { createScene } from '../render/scene';
 import { detectQuality } from '../render/quality';
 import { buildFruitPrototypes } from '../render/fruit/builders';
+import { renderFruitIcons } from '../render/fruit/icons';
 import { createPhysicsWorld, initRapier, type PhysicsWorld } from '../physics/world';
 import { InputController } from '../platform/input';
 import { poki } from '../platform/poki';
@@ -76,6 +77,8 @@ export class Game {
   async load(): Promise<void> {
     await initRapier();
     buildFruitPrototypes();
+    // Capture the HUD's fruit images while we are still on the loading screen.
+    this.hud.setFruitIcons(renderFruitIcons());
     this.physics = createPhysicsWorld();
     this.pile = new Pile(this.physics, this.kit.fruitLayer);
     this.thrower = new Thrower(this.kit.scene, this.physics, this.rig);

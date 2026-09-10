@@ -30,6 +30,9 @@ export class Hud {
   private readonly loading: HTMLDivElement;
   private chainTimer = 0;
   private muted = false;
+  /** Rendered fruit images, indexed by tier; empty until setFruitIcons runs. */
+  private fruitIcons: string[] = [];
+  private nextTier = 0;
 
   constructor(root: HTMLElement, private readonly callbacks: HudCallbacks) {
     root.innerHTML = '';
@@ -53,10 +56,12 @@ export class Hud {
     const tray = el('div', 'tray panel');
     TIERS.forEach((tier) => {
       const dot = el('div', 'tray-dot');
+      // Coloured circles until the rendered icons arrive - a refused WebGL
+      // context should leave a readable tray, not eleven empty boxes.
       const size = 8 + tier.index * 1.9;
       dot.style.width = `${size}px`;
       dot.style.height = `${size}px`;
-      dot.style.background = hex(tier.color);
+      dot.style.backgroundColor = hex(tier.color);
       dot.title = tier.name;
       tray.append(dot);
       this.trayDots.push(dot);
@@ -193,9 +198,38 @@ export class Hud {
     }
   }
 
+  /**
+   * Swaps the placeholder circles for real rendered fruit. Called once the
+   * prototypes exist and the icons have been captured (see renderFruitIcons).
+   */
+  setFruitIcons(urls: string[]): void {
+    if (urls.length < TIERS.length) return;
+    this.fruitIcons = urls;
+
+    this.trayDots.forEach((dot, tier) => {
+      // Renders need more room than a flat dot to stay readable.
+      const size = 14 + tier * 1.8;
+      dot.style.width = `${size}px`;
+      dot.style.height = `${size}px`;
+      dot.style.backgroundColor = 'transparent';
+      dot.style.backgroundImage = `url(${urls[tier]})`;
+      dot.classList.add('has-icon');
+    });
+
+    this.setNext(this.nextTier);
+  }
+
   setNext(tier: number): void {
     const data = TIERS[tier];
-    this.nextSwatch.style.background = hex(data.color);
+    this.nextTier = tier;
+    const icon = this.fruitIcons[tier];
+    if (icon) {
+      this.nextSwatch.style.backgroundColor = 'transparent';
+      this.nextSwatch.style.backgroundImage = `url(${icon})`;
+      this.nextSwatch.classList.add('has-icon');
+    } else {
+      this.nextSwatch.style.backgroundColor = hex(data.color);
+    }
     this.nextName.textContent = data.name;
   }
 
@@ -219,9 +253,18 @@ export class Hud {
     this.overBody.append(el('h2', '', data.isNewBest ? 'New best!' : 'Plate cleared out'));
     this.overBody.append(el('div', 'big-score', String(data.score)));
     this.overBody.append(el('div', 'sub', 'points'));
-    this.overBody.append(
-      el('p', '', `Biggest fruit: ${TIERS[data.biggestTier].name} • ${data.throws} throws`),
+
+    const biggest = el('p', 'biggest');
+    const icon = this.fruitIcons[data.biggestTier];
+    if (icon) {
+      const swatch = el('span', 'biggest-icon');
+      swatch.style.backgroundImage = `url(${icon})`;
+      biggest.append(swatch);
+    }
+    biggest.append(
+      el('span', '', `Biggest fruit: ${TIERS[data.biggestTier].name} • ${data.throws} throws`),
     );
+    this.overBody.append(biggest);
     if (data.isNewBest) this.overBody.append(el('div', 'badge', `Best ${data.best}`));
     else this.overBody.append(el('p', '', `Best: ${data.best}`));
     const button = el('button', 'btn', 'Play again');
