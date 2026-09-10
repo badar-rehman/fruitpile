@@ -13,6 +13,16 @@ call count stays low. Instances are scaled to the tier radius from
 attribute** — a single `MeshStandardMaterial` with `vertexColors: true` covers all
 eleven fruits, no textures anywhere.
 
+**Everything is welded and smooth-shaded.** `IcosahedronGeometry` is non-indexed
+(every triangle carries its own three vertices), so computing normals on it can
+only ever produce per-face normals — hard facets regardless of `flatShading`. So
+`displace()` drops the stale normal/uv attributes, runs `mergeVertices()`, and
+only then recomputes normals, letting them average across neighbouring faces.
+Dropping the normals first is load-bearing: `mergeVertices()` keys on every
+attribute, so leaving them attached makes the weld a silent no-op. Subdivision is
+scaled by tier (detail 5 for the small fruit up to 8 for the big ones, ~720–1620
+triangles) so silhouettes read round as well as smoothly shaded.
+
 | Tier | Fruit | How it is built |
 |---|---|---|
 | 1 | Blueberry | Icosphere, squashed, dimpled top, 5 cone calyx petals, dusty-bloom gradient |
@@ -23,11 +33,12 @@ eleven fruits, no textures anywhere.
 | 6 | Orange | High-detail icosphere with fine bump noise, mottled skin, green nub |
 | 7 | Pear | Lathe profile (fat base, narrow neck), russet speckle, stem + leaf |
 | 8 | Dragonfruit | Icosphere plus 19 flattened cones in three rings, pink-to-green tips |
-| 9 | Pineapple | Icosphere stretched and displaced by a lat/long diamond lattice, flat-shaded, 11-cone crown |
+| 9 | Pineapple | Icosphere stretched and displaced by a lat/long diamond lattice into quilted skin, 11-cone crown |
 | 10 | Melon | Icosphere with a procedural net pattern raised and lightened via `netPattern()` |
 | 11 | Watermelon | Icosphere with wobbling longitudinal stripes, tube-geometry curly tendril |
 
-Shared helpers in `geometry.ts`: `displace()` (per-vertex radial displacement),
+Shared helpers in `geometry.ts`: `displace()` (per-vertex radial displacement,
+weld and smooth normals),
 `colorize()` (bake vertex colours), `fibonacciSphere()`, `makeStem()`, `makeLeaf()`,
 `noise3()` / `smoothNoise()`.
 
@@ -60,6 +71,25 @@ Plain DOM and one stylesheet: score, best, strike pips, chain banner, evolution
 tray, next-fruit card, rotate buttons, mute toggle, title card, game-over card,
 loading screen, debug overlay. System font stack, safe-area insets respected,
 one narrow-screen media query re-flows the tray.
+
+**Fruit icons**: the evolution tray, the next-fruit card and the game-over
+summary show real renders, not coloured circles. `src/render/fruit/icons.ts`
+renders each prototype once during the loading screen — its own throwaway
+`WebGLRenderer` (transparent, square, lit identically to `scene.ts` so a tray
+icon matches the fruit on the plate), each fruit framed individually off its
+bounding sphere so the pineapple's crown doesn't make the set look randomly
+sized — and hands eleven PNG data URLs to `hud.setFruitIcons()`. The context is
+released immediately (`dispose()` + `forceContextLoss()`); browsers cap live
+WebGL contexts and the game needs its own. Undiscovered tiers are shown
+greyscaled and dimmed, so reaching a new fruit brings it into colour. Icons cost
+nothing in download since they are generated at runtime, and the HUD falls back
+to the original coloured circles if WebGL is unavailable.
+
+One CSS trap worth remembering: never assign the `background` *shorthand* from
+JS on these elements. It also writes `background-size`/`-position`/`-repeat`
+inline at their initial values, and inline beats the stylesheet — which silently
+defeats the `contain`/`center` sizing the icons need. Set `backgroundColor` and
+`backgroundImage` longhands only.
 
 ## Audio (`src/audio/sfx.ts`)
 

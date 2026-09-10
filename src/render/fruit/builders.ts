@@ -18,8 +18,8 @@ function sphere(detail = 3): THREE.BufferGeometry {
   return new THREE.IcosahedronGeometry(1, detail);
 }
 
-function body(geometry: THREE.BufferGeometry, flat = false): THREE.Mesh {
-  const mesh = new THREE.Mesh(geometry, fruitMaterial({ flatShading: flat }));
+function body(geometry: THREE.BufferGeometry): THREE.Mesh {
+  const mesh = new THREE.Mesh(geometry, fruitMaterial());
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   return mesh;
@@ -32,7 +32,7 @@ function tint(base: number, accent: number, mix: number): THREE.Color {
 // ----------------------------------------------------------- blueberry
 function buildBlueberry(): THREE.Group {
   const group = new THREE.Group();
-  const geometry = displace(sphere(3), (dir) => {
+  const geometry = displace(sphere(5), (dir) => {
     const dimple = Math.max(0, (dir.y - 0.7) / 0.3);
     return (1 - dimple * dimple * 0.28) * (1 + 0.02 * smoothNoise(dir.x, dir.y, dir.z, 6));
   });
@@ -74,7 +74,7 @@ function buildStrawberry(): THREE.Group {
     new THREE.Vector2(0.4, 0.92),
     new THREE.Vector2(0.02, 0.96),
   ];
-  const geometry = new THREE.LatheGeometry(profile, 26);
+  const geometry = new THREE.LatheGeometry(profile, 48);
   geometry.computeVertexNormals();
   colorize(geometry, (p, _n, c) => {
     c.copy(tint(0xe8324f, 0x8f1226, THREE.MathUtils.clamp(0.35 - p.y * 0.45, 0, 1)));
@@ -117,7 +117,7 @@ function buildStrawberry(): THREE.Group {
 // -------------------------------------------------------------- kiwano
 function buildKiwano(): THREE.Group {
   const group = new THREE.Group();
-  const geometry = displace(sphere(3), (dir) => 1 + 0.05 * smoothNoise(dir.x, dir.y, dir.z, 4));
+  const geometry = displace(sphere(5), (dir) => 1 + 0.05 * smoothNoise(dir.x, dir.y, dir.z, 4));
   geometry.scale(1, 1.12, 0.95);
   colorize(geometry, (p, _n, c) => {
     c.copy(tint(0xe8a022, 0xc46b12, 0.3 + 0.3 * noise3(p.x * 3, p.y * 3, p.z * 3)));
@@ -145,7 +145,7 @@ function buildKiwano(): THREE.Group {
 
 function buildPeach(): THREE.Group {
   const group = new THREE.Group();
-  const geometry = displace(sphere(3), (dir) => {
+  const geometry = displace(sphere(6), (dir) => {
     const crease = Math.exp(-Math.pow(dir.x / 0.2, 2)) * Math.max(0, dir.z);
     const dimple = Math.max(0, (dir.y - 0.74) / 0.26);
     return 1 - 0.2 * crease - 0.2 * dimple * dimple;
@@ -173,7 +173,7 @@ function buildPeach(): THREE.Group {
 // --------------------------------------------------------------- apple
 function buildApple(): THREE.Group {
   const group = new THREE.Group();
-  const geometry = displace(sphere(3), (dir) => {
+  const geometry = displace(sphere(6), (dir) => {
     const pole = Math.max(0, (Math.abs(dir.y) - 0.68) / 0.32);
     return 1 - 0.32 * pole * pole + 0.02 * smoothNoise(dir.x, dir.y, dir.z, 5);
   });
@@ -198,7 +198,7 @@ function buildApple(): THREE.Group {
 // -------------------------------------------------------------- orange
 function buildOrange(): THREE.Group {
   const group = new THREE.Group();
-  const geometry = displace(sphere(4), (dir) => {
+  const geometry = displace(sphere(8), (dir) => {
     const pole = Math.max(0, (Math.abs(dir.y) - 0.8) / 0.2);
     return 1 - 0.1 * pole * pole + 0.012 * smoothNoise(dir.x, dir.y, dir.z, 22);
   });
@@ -233,7 +233,7 @@ function buildPear(): THREE.Group {
     new THREE.Vector2(0.36, 1.0),
     new THREE.Vector2(0.02, 1.04),
   ];
-  const geometry = new THREE.LatheGeometry(profile, 28);
+  const geometry = new THREE.LatheGeometry(profile, 48);
   geometry.computeVertexNormals();
   colorize(geometry, (p, _n, c) => {
     const russet = noise3(p.x * 9, p.y * 9, p.z * 9);
@@ -256,7 +256,7 @@ function buildPear(): THREE.Group {
 
 function buildDragonfruit(): THREE.Group {
   const group = new THREE.Group();
-  const geometry = displace(sphere(3), (dir) => 1 + 0.04 * smoothNoise(dir.x, dir.y, dir.z, 4));
+  const geometry = displace(sphere(8), (dir) => 1 + 0.04 * smoothNoise(dir.x, dir.y, dir.z, 4));
   geometry.scale(0.92, 1.14, 0.92);
   colorize(geometry, (p, _n, c) => {
     c.copy(tint(0xe0326f, 0xff7fae, 0.15 + 0.35 * Math.max(0, p.y)));
@@ -292,7 +292,7 @@ function buildDragonfruit(): THREE.Group {
 // ----------------------------------------------------------- pineapple
 function buildPineapple(): THREE.Group {
   const group = new THREE.Group();
-  const geometry = displace(sphere(3), (dir) => {
+  const geometry = displace(sphere(8), (dir) => {
     const lat = Math.asin(THREE.MathUtils.clamp(dir.y, -1, 1));
     const lon = Math.atan2(dir.z, dir.x);
     const facet = Math.sin(lat * 11 + lon * 5) * Math.sin(lat * 11 - lon * 5);
@@ -306,7 +306,7 @@ function buildPineapple(): THREE.Group {
     const grid = Math.sin(lat * 11 + lon * 5) * Math.sin(lat * 11 - lon * 5);
     c.copy(tint(0xc9861f, 0xf3c760, THREE.MathUtils.clamp(grid * 0.9 + 0.45, 0, 1)));
   });
-  group.add(body(geometry, true));
+  group.add(body(geometry));
 
   const crown = new THREE.Group();
   for (let i = 0; i < 11; i++) {
@@ -328,15 +328,15 @@ function buildPineapple(): THREE.Group {
 
 function buildMelon(): THREE.Group {
   const group = new THREE.Group();
-  const geometry = displace(sphere(4), (dir) => {
+  const geometry = displace(sphere(8), (dir) => {
     const vein = netPattern(dir.x, dir.y, dir.z);
-    return 1 + 0.02 * smoothNoise(dir.x, dir.y, dir.z, 9) + vein * 0.02;
+    return 1 + 0.015 * smoothNoise(dir.x, dir.y, dir.z, 9) + vein * 0.038;
   });
   geometry.scale(1, 0.96, 1);
   colorize(geometry, (p, _n, c) => {
     const vein = netPattern(p.x, p.y / 0.96, p.z);
     const base = tint(0x9fb56d, 0xc9d69a, 0.25 + 0.3 * noise3(p.x * 4, p.y * 4, p.z * 4));
-    c.copy(base).lerp(NET_COLOR, vein * 0.85);
+    c.copy(base).lerp(NET_COLOR, vein * 0.6);
   });
   group.add(body(geometry));
 
@@ -350,14 +350,14 @@ const NET_COLOR = new THREE.Color(0xf2f3e0);
 
 /** Raised reticulation of a netted melon: 0 = skin, 1 = vein. */
 function netPattern(x: number, y: number, z: number): number {
-  const ridge = Math.abs(Math.sin(x * 5.5) + Math.sin(y * 6.5 + 1.2) + Math.sin(z * 5.0 + 2.4));
-  return 1 - THREE.MathUtils.smoothstep(Math.min(ridge, 1.4), 0.05, 0.5);
+  const ridge = Math.abs(Math.sin(x * 7.5) + Math.sin(y * 8.5 + 1.2) + Math.sin(z * 7.0 + 2.4));
+  return 1 - THREE.MathUtils.smoothstep(Math.min(ridge, 1.0), 0.02, 0.24);
 }
 
 // ---------------------------------------------------------- watermelon
 function buildWatermelon(): THREE.Group {
   const group = new THREE.Group();
-  const geometry = displace(sphere(4), (dir) => 1 + 0.012 * smoothNoise(dir.x, dir.y, dir.z, 7));
+  const geometry = displace(sphere(8), (dir) => 1 + 0.012 * smoothNoise(dir.x, dir.y, dir.z, 7));
   geometry.scale(1, 0.93, 1);
   colorize(geometry, (p, _n, c) => {
     const lon = Math.atan2(p.z, p.x);

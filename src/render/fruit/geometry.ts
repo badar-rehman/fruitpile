@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 /** Cheap deterministic value noise - enough to make fruit look hand-made. */
 export function noise3(x: number, y: number, z: number): number {
@@ -13,7 +14,17 @@ export function smoothNoise(x: number, y: number, z: number, freq: number): numb
   );
 }
 
-/** Displace every vertex of a (roughly spherical) geometry along its direction. */
+/**
+ * Displace every vertex of a (roughly spherical) geometry along its direction,
+ * then weld it so the shading comes out smooth.
+ *
+ * IcosahedronGeometry is non-indexed - every triangle carries its own three
+ * vertices - so computeVertexNormals() on it can only produce per-face normals
+ * and the fruit reads as hard facets no matter what `flatShading` says. Welding
+ * the duplicate corners together first lets the normals average across
+ * neighbouring faces, which is why the lathe-built fruit (indexed from the
+ * start) always looked smoother than the rest.
+ */
 export function displace(
   geometry: THREE.BufferGeometry,
   fn: (dir: THREE.Vector3, original: THREE.Vector3) => number,
@@ -28,8 +39,15 @@ export function displace(
     pos.setXYZ(i, original.x * scale, original.y * scale, original.z * scale);
   }
   pos.needsUpdate = true;
-  geometry.computeVertexNormals();
-  return geometry;
+
+  // mergeVertices() keys on every attribute, so the stale per-face normals
+  // would make each corner look unique and the weld a no-op. Drop them (and
+  // the unused UVs) and let the normals be rebuilt from the welded topology.
+  geometry.deleteAttribute('normal');
+  geometry.deleteAttribute('uv');
+  const welded = mergeVertices(geometry, 1e-5);
+  welded.computeVertexNormals();
+  return welded;
 }
 
 /** Bake a per-vertex colour so a single material can carry stripes and speckles. */
