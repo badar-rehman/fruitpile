@@ -6,6 +6,7 @@ import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { CONFIG, DEG } from '../config';
 import { clamp01, lerp } from '../core/math';
 import { createFruitIcon } from '../render/fruit/builders';
+import { createFaceMesh } from '../render/fruit/faces';
 import type { CameraRig } from '../render/cameraRig';
 import type { PhysicsWorld } from '../physics/world';
 import { TIERS } from './tiers';
@@ -29,6 +30,7 @@ export class Thrower {
   private readonly landingRing: THREE.Mesh;
   private readonly powerRing: THREE.Mesh;
   private held: THREE.Object3D | null = null;
+  private heldFace: THREE.Mesh | null = null;
   private bob = 0;
   private readonly solution: ThrowSolution = {
     origin: new THREE.Vector3(),
@@ -104,10 +106,20 @@ export class Thrower {
   setTier(tier: number): void {
     this.tier = tier;
     if (this.held) this.holder.remove(this.held);
+    if (this.heldFace) this.holder.remove(this.heldFace);
+
+    const radius = TIERS[tier].radius * 0.85;
     this.held = createFruitIcon(tier);
     // Slightly under-scaled: held right in front of the lens, full size reads huge.
-    this.held.scale.setScalar(TIERS[tier].radius * 0.85);
+    this.held.scale.setScalar(radius);
     this.holder.add(this.held);
+
+    // Billboarded in update() rather than pinned to the holder: the camera
+    // looks down at the held fruit, so a plane facing horizontally would sit
+    // low on the silhouette and foreshorten.
+    this.heldFace = createFaceMesh('content');
+    this.heldFace.scale.setScalar(Math.max(CONFIG.face.minSize, radius * CONFIG.face.scale));
+    this.group.add(this.heldFace);
   }
 
   setVisible(visible: boolean): void {
@@ -217,7 +229,18 @@ export class Thrower {
     this.bob += dt;
     const origin = this.originFor(_origin);
     this.holder.position.set(origin.x, origin.y + Math.sin(this.bob * 2.2) * 0.045, origin.z);
-    this.holder.rotation.y += dt * 0.6;
+    const toCamera = this.rig.horizontalDirection(_dir);
+    this.holder.rotation.y = Math.atan2(toCamera.x, toCamera.z);
+
+    if (this.heldFace) {
+      const camera = this.rig.camera;
+      const radius = TIERS[this.tier].radius * 0.85;
+      _faceDir.setFromMatrixPosition(camera.matrixWorld).sub(this.holder.position).normalize();
+      this.heldFace.position
+        .copy(this.holder.position)
+        .addScaledVector(_faceDir, radius * CONFIG.face.surfaceOffset);
+      this.heldFace.quaternion.copy(camera.quaternion);
+    }
 
     if (aiming && charge > 0.001) {
       const solution = this.solve(charge, yawInput);
@@ -260,4 +283,5 @@ const _b = new THREE.Vector3();
 const _c = new THREE.Vector3();
 const _origin = new THREE.Vector3();
 const _dir = new THREE.Vector3();
+const _faceDir = new THREE.Vector3();
 const _ray = new RAPIER.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });

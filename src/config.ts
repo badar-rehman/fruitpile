@@ -105,6 +105,23 @@ export interface GameConfig {
     safeColor: number;
     riskyColor: number;
   };
+  face: {
+    /** Face size as a fraction of the fruit's radius. */
+    scale: number;
+    /** Floor on face size, so a blueberry still gets a readable face. */
+    minSize: number;
+    /** How far along the camera direction the face sits, in fruit radii.
+     *  Must stay above 1 or the fruit's own surface hides it. */
+    surfaceOffset: number;
+    /** Squash above this counts as a landing thump. */
+    impactSquash: number;
+    /** Speed above which an airborne fruit looks startled. */
+    flyingSpeed: number;
+    impactHold: number;
+    delightedHold: number;
+    blinkEvery: number;
+    blinkFor: number;
+  };
 }
 
 export const CONFIG: GameConfig = {
@@ -200,6 +217,18 @@ export const CONFIG: GameConfig = {
     opacity: 0.7,
     safeColor: 0xffffff,
     riskyColor: 0xff8000,
+  },
+
+  face: {
+    scale: 1.15,
+    minSize: 0.19,
+    surfaceOffset: 1.02,
+    impactSquash: 0.12,
+    flyingSpeed: 2.5,
+    impactHold: 0.22,
+    delightedHold: 0.6,
+    blinkEvery: 3.4,
+    blinkFor: 0.12,
   },
 };
 

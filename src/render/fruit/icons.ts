@@ -1,6 +1,8 @@
 import * as THREE from 'three';
+import { CONFIG } from '../../config';
 import { TIERS } from '../../gameplay/tiers';
 import { createFruitIcon } from './builders';
+import { createFaceMesh } from './faces';
 
 /**
  * Renders each fruit once to a PNG data URL so the HUD can show the real thing
@@ -71,10 +73,20 @@ export function renderFruitIcons(size = 112): string[] {
       camera.lookAt(0, 0, 0);
       camera.updateProjectionMatrix();
 
+      // Same face the fruit wears in play, so the tray matches the plate. The
+      // icon camera is fixed, so this one can simply be parked facing it.
+      const radius = TIERS[tier].radius;
+      const face = createFaceMesh('content');
+      face.scale.setScalar(Math.max(CONFIG.face.minSize, radius * CONFIG.face.scale) / radius * sphere.radius * 0.62);
+      face.position.copy(camera.position).normalize().multiplyScalar(sphere.radius * 0.96);
+      face.lookAt(camera.position);
+      scene.add(face);
+
       renderer.render(scene, camera);
       urls.push(renderer.domElement.toDataURL('image/png'));
 
       scene.remove(fruit);
+      scene.remove(face);
     }
     return urls;
   } catch {

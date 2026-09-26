@@ -43,6 +43,7 @@ export class DevPanel {
     this.buildRun();
     this.buildTrajectory();
     this.buildLandingRing();
+    this.buildFace();
     this.buildFruitTiers();
     this.buildActions();
 
@@ -238,6 +239,19 @@ export class DevPanel {
     this.num(f, CONFIG.landingRing, 'opacity', 0, 1, 0.01);
     this.color(f, CONFIG.landingRing, 'safeColor');
     this.color(f, CONFIG.landingRing, 'riskyColor');
+  }
+
+  private buildFace(): void {
+    const f = this.gui.addFolder('Face');
+    this.num(f, CONFIG.face, 'scale', 0.4, 2.5, 0.01);
+    this.num(f, CONFIG.face, 'minSize', 0, 0.6, 0.01);
+    this.num(f, CONFIG.face, 'surfaceOffset', 1, 1.4, 0.01, { label: 'surfaceOffset (>1)' });
+    this.num(f, CONFIG.face, 'impactSquash', 0, 0.5, 0.01);
+    this.num(f, CONFIG.face, 'flyingSpeed', 0, 10, 0.1);
+    this.num(f, CONFIG.face, 'impactHold', 0, 1, 0.01);
+    this.num(f, CONFIG.face, 'delightedHold', 0, 2, 0.05);
+    this.num(f, CONFIG.face, 'blinkEvery', 0.5, 10, 0.1);
+    this.num(f, CONFIG.face, 'blinkFor', 0.02, 0.5, 0.01);
   }
 
   private buildFruitTiers(): void {
