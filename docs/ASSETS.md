@@ -57,6 +57,34 @@ Review the whole set at any time with `npm run dev` → `?gallery=1`.
 | Landing ring | Ring mesh oriented to the surface normal, amber when the spot is risky |
 | Power ring | Ring under the held fruit, green → amber → orange with charge |
 
+## Faces (`src/render/fruit/faces.ts`)
+
+Every fruit wears a face: two dark dots and a thin mouth stroke, drawn into
+128×128 canvases at boot and used as `CanvasTexture`s, so they add nothing to
+the download. Seven expressions — `content`, `blink`, `flying`, `impact`,
+`delighted`, `panicked`, `dizzy` — picked each frame by a priority ladder over
+state the simulation already tracks (`doomed`, `offSince`, `popIn`, `airborne`,
+`lastSpeed`, `squash`), with short hold timers so momentary looks cannot flicker
+for a single frame, plus an idle blink.
+
+**Faces are never parented to the fruit.** A fruit mesh carries the physics
+body's rotation *and* a non-uniform squash scale: a welded face would roll under
+the pile, and a counter-rotating child would be sheared by the parent's scale.
+`FaceLayer` instead keeps its own billboards, places each one along the
+fruit→camera direction just outside the near surface, copies the camera's
+quaternion, and re-applies squash in billboard space — which reads better than a
+parented face anyway, since the squish always shows as vertical compression on
+screen however the fruit happened to roll.
+
+Two details worth keeping: `surfaceOffset` must stay **above 1.0** (at less than
+one radius the face sits inside the fruit and its own body occludes it), and
+face textures are shared while materials are per-face (a shared material would
+make one fruit's merge fade-in dim every other fruit wearing that expression).
+Small fruit get a size floor (`CONFIG.face.minSize`) so a blueberry still has a
+readable face. Held fruit and the HUD icons use `createFaceMesh()` for a static
+version; the held one is billboarded in `Thrower.update()` because the camera
+looks down at it. Everything is tunable live under the dev panel's Face folder.
+
 ## Effects (`src/juice/`)
 
 - **Sparkles** — one `InstancedMesh` of octahedra with a pooled particle list,

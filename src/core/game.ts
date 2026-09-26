@@ -15,6 +15,7 @@ import { createScene } from '../render/scene';
 import { detectQuality } from '../render/quality';
 import { buildFruitPrototypes } from '../render/fruit/builders';
 import { renderFruitIcons } from '../render/fruit/icons';
+import { FaceLayer } from '../render/fruit/faces';
 import { createPhysicsWorld, initRapier, type PhysicsWorld } from '../physics/world';
 import { InputController } from '../platform/input';
 import { poki } from '../platform/poki';
@@ -29,6 +30,7 @@ export class Game {
   private readonly rig: CameraRig;
   private readonly hud: Hud;
   private readonly particles: ParticleSystem;
+  private readonly faces: FaceLayer;
   private readonly popups: ScorePopups;
   private readonly input: InputController;
   private physics!: PhysicsWorld;
@@ -54,6 +56,7 @@ export class Game {
     this.kit = createScene(canvas, this.quality);
     this.rig = new CameraRig(window.innerWidth / window.innerHeight);
     this.particles = new ParticleSystem(this.kit.effectLayer, this.quality.particleBudget);
+    this.faces = new FaceLayer(this.kit.effectLayer);
 
     this.hud = new Hud(uiRoot, {
       onRotate: (direction) => this.input.setButtonOrbit(direction),
@@ -117,6 +120,7 @@ export class Game {
     this.hud.showTitle(false);
     this.hud.hideGameOver();
     this.state = 'playing';
+    this.faces.setGameOver(false);
     this.thrower.setVisible(true);
     poki.gameplayStart();
   }
@@ -129,6 +133,7 @@ export class Game {
 
     this.pile.clear();
     this.particles.clear();
+    this.faces.clear();
     this.popups.clear();
     this.score = 0;
     this.throws = 0;
@@ -160,6 +165,7 @@ export class Game {
       biggestTier: this.pile.biggestTier,
       throws: this.throws,
     };
+    this.faces.setGameOver(true);
     bus.emit('gameover', payload);
     window.setTimeout(() => this.hud.showGameOver(payload), 900);
   }
@@ -270,6 +276,7 @@ export class Game {
       }
       if (steps === CONFIG.physics.maxStepsPerFrame) this.accumulator = 0;
       this.pile.sync(this.accumulator / CONFIG.physics.fixedStep, rawDt);
+      this.faces.update(this.rig.camera, this.pile.fruits, rawDt);
     }
 
     const aim = this.input.aim;
@@ -301,7 +308,7 @@ export class Game {
       this.fpsTimer = 0;
     }
     this.hud.setDebug(
-      `fps ${this.fps}\nfruits ${this.pile?.count ?? 0}\nstate ${this.state}\ndraws ${this.kit.renderer.info.render.calls}`,
+      `fps ${this.fps}\nfruits ${this.pile?.count ?? 0}\nstate ${this.state}\ndraws ${this.kit.renderer.info.render.calls}\nfaces ${this.faces.debugSummary()}`,
     );
   }
 
