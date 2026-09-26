@@ -106,7 +106,7 @@ export class Thrower {
   setTier(tier: number): void {
     this.tier = tier;
     if (this.held) this.holder.remove(this.held);
-    if (this.heldFace) this.holder.remove(this.heldFace);
+    if (this.heldFace) this.group.remove(this.heldFace);
 
     const radius = TIERS[tier].radius * 0.85;
     this.held = createFruitIcon(tier);
