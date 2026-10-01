@@ -172,8 +172,11 @@ function faceMaterial(expression: Expression): THREE.MeshBasicMaterial {
   return new THREE.MeshBasicMaterial({
     map: faceTexture(expression),
     transparent: true,
-    // Depth-tested so fruit in front still hide a face behind them, but not
-    // depth-written so overlapping faces never punch holes in each other.
+    // Drawn over everything rather than depth-tested: a flat plane can never
+    // clear a kiwano's spikes, a dragonfruit's fins or a pineapple's bumps, so
+    // depth testing would slice the face in half. FaceLayer hides faces that
+    // sit behind other fruit itself instead.
+    depthTest: false,
     depthWrite: false,
     toneMapped: false,
   });
@@ -212,6 +215,8 @@ interface FaceState {
   nextBlink: number;
   blinkFor: number;
   seen: boolean;
+  /** 0 = visible, 1 = hidden behind another fruit; eased so faces never pop. */
+  occlusion: number;
 }
 
 export class FaceLayer {
@@ -232,6 +237,10 @@ export class FaceLayer {
     const face = CONFIG.face;
 
     for (const state of this.states.values()) state.seen = false;
+
+    _camera.setFromMatrixPosition(camera.matrixWorld);
+    _right.set(1, 0, 0).applyQuaternion(camera.quaternion);
+    _up.set(0, 1, 0).applyQuaternion(camera.quaternion);
 
     for (const fruit of fruits) {
       const state = this.stateFor(fruit);
@@ -262,7 +271,9 @@ export class FaceLayer {
       );
       // Fade in with the merge pop so a new fruit's face does not snap on.
       const material = state.mesh.material as THREE.MeshBasicMaterial;
-      const fade = fruit.doomed ? 1 : Math.min(1, fruit.popIn * 1.6);
+      const hidden = this.isHidden(fruit, fruits, state.mesh.position, size) ? 1 : 0;
+      state.occlusion += (hidden - state.occlusion) * Math.min(1, dt * 16);
+      const fade = (fruit.doomed ? 1 : Math.min(1, fruit.popIn * 1.6)) * (1 - state.occlusion);
       if (material.opacity !== fade) material.opacity = fade;
       state.mesh.visible = fade > 0.02;
     }
@@ -288,10 +299,53 @@ export class FaceLayer {
         nextBlink: this.time + 1 + Math.random() * CONFIG.face.blinkEvery,
         blinkFor: 0,
         seen: true,
+        occlusion: 0,
       };
       this.states.set(fruit.id, state);
     }
     return state;
+  }
+
+  /**
+   * A face counts as hidden when its centre, or two or more of its corners, sit
+   * behind another fruit - so a face half-covered by a neighbour disappears
+   * instead of poking out over that neighbour's silhouette.
+   */
+  private isHidden(
+    self: FaceSubject,
+    fruits: readonly FaceSubject[],
+    anchor: THREE.Vector3,
+    size: number,
+  ): boolean {
+    if (this.isOccluded(self, fruits, anchor)) return true;
+    const reach = size * 0.4;
+    let covered = 0;
+    for (const [x, y] of CORNERS) {
+      _sample.copy(anchor).addScaledVector(_right, x * reach).addScaledVector(_up, y * reach);
+      if (this.isOccluded(self, fruits, _sample)) covered++;
+    }
+    return covered >= 2;
+  }
+
+  /** True when another fruit's body sits between the camera and this point. */
+  private isOccluded(
+    self: FaceSubject,
+    fruits: readonly FaceSubject[],
+    anchor: THREE.Vector3,
+  ): boolean {
+    _ray.copy(anchor).sub(_camera);
+    const length = _ray.length();
+    _ray.multiplyScalar(1 / length);
+    for (const other of fruits) {
+      if (other === self) continue;
+      _offset.copy(other.mesh.position).sub(_camera);
+      const along = _offset.dot(_ray);
+      if (along <= 0 || along >= length) continue;
+      const missSq = _offset.lengthSq() - along * along;
+      const reach = other.radius * 0.9;
+      if (missSq < reach * reach) return true;
+    }
+    return false;
   }
 
   /** Priority ladder: the more dramatic the state, the higher it sits. */
@@ -349,3 +403,15 @@ export class FaceLayer {
 }
 
 const _toCamera = new THREE.Vector3();
+const _camera = new THREE.Vector3();
+const _ray = new THREE.Vector3();
+const _offset = new THREE.Vector3();
+const _right = new THREE.Vector3();
+const _up = new THREE.Vector3();
+const _sample = new THREE.Vector3();
+const CORNERS: Array<[number, number]> = [
+  [-1, 1],
+  [1, 1],
+  [-1, -1],
+  [1, -1],
+];
