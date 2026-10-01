@@ -46,11 +46,11 @@ function buildBlueberry(): THREE.Group {
   const crown = new THREE.Group();
   for (let i = 0; i < 5; i++) {
     const petal = new THREE.Mesh(
-      new THREE.ConeGeometry(0.09, 0.22, 4),
-      plainMaterial(0x2b3570, 0.8),
+      new THREE.ConeGeometry(0.06, 0.14, 4),
+      plainMaterial(0x5668bd, 0.8),
     );
     const angle = (i / 5) * Math.PI * 2;
-    petal.position.set(Math.cos(angle) * 0.16, 0.72, Math.sin(angle) * 0.16);
+    petal.position.set(Math.cos(angle) * 0.13, 0.66, Math.sin(angle) * 0.13);
     petal.rotation.set(Math.cos(angle) * 0.7, 0, -Math.sin(angle) * 0.7);
     crown.add(petal);
   }
