@@ -147,6 +147,7 @@ export class Hud {
     card.append(el('h1', '', 'Fruit Mountain'));
     card.append(el('p', '', 'Toss fruit onto the plate. Matching fruit merges into something bigger.'));
     card.append(el('p', '', 'Nothing may roll off — three drops and the run is over.'));
+    card.append(el('p', 'credits', 'Miki by Noraneko Games · UI by dobo_ui'));
     const button = el('button', 'btn', 'Play');
     button.addEventListener('click', () => this.callbacks.onStart());
     card.append(button);

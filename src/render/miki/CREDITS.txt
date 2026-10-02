@@ -1,0 +1,11 @@
+Character art: "Miki" by Noraneko Games
+https://noranekogames.itch.io/miki
+
+Licence (from the pack's page): may be used in commercial games with credit to
+"Noraneko Games" in the in-game credits, a text file, or the download page.
+The assets may not be resold on their own, may not be used in or with AI, and
+may not be used to glorify abuse or hate. The artist also asks to be told where
+the credit appears.
+
+These nine WebP files are the "Casual" outfit expressions, cropped to the upper
+body and downscaled. Do not publish them as a standalone asset pack.

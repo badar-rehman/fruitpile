@@ -1,0 +1,9 @@
+UI artwork: "Cozy UI Pack" (free demo version) by dobo_ui
+https://dobo-ui.itch.io/cozy-ui
+
+Licence (from the pack's page): may be used and reworked in personal and
+commercial projects; may NOT be resold or distributed to others in any way, and
+may not be used in crypto/NFT projects or for generative-AI training.
+
+These eight PNGs are unmodified sprites from the demo. Do not publish them as a
+standalone asset pack. Consider buying the full pack to support the artist.

@@ -16,6 +16,7 @@ import { detectQuality } from '../render/quality';
 import { buildFruitPrototypes } from '../render/fruit/builders';
 import { renderFruitIcons } from '../render/fruit/icons';
 import { FaceLayer } from '../render/fruit/faces';
+import { Miki } from '../render/miki';
 import { createPhysicsWorld, initRapier, type PhysicsWorld } from '../physics/world';
 import { InputController } from '../platform/input';
 import { poki } from '../platform/poki';
@@ -31,6 +32,7 @@ export class Game {
   private readonly hud: Hud;
   private readonly particles: ParticleSystem;
   private readonly faces: FaceLayer;
+  private readonly miki: Miki;
   private readonly popups: ScorePopups;
   private readonly input: InputController;
   private physics!: PhysicsWorld;
@@ -57,6 +59,7 @@ export class Game {
     this.rig = new CameraRig(window.innerWidth / window.innerHeight);
     this.particles = new ParticleSystem(this.kit.effectLayer, this.quality.particleBudget);
     this.faces = new FaceLayer(this.kit.effectLayer);
+    this.miki = new Miki(this.kit.scene);
 
     this.hud = new Hud(uiRoot, {
       onRotate: (direction) => this.input.setButtonOrbit(direction),
@@ -121,6 +124,7 @@ export class Game {
     this.hud.hideGameOver();
     this.state = 'playing';
     this.faces.setGameOver(false);
+    this.miki.react({ kind: 'start' });
     this.thrower.setVisible(true);
     poki.gameplayStart();
   }
@@ -166,6 +170,7 @@ export class Game {
       throws: this.throws,
     };
     this.faces.setGameOver(true);
+    this.miki.react({ kind: 'gameover' });
     bus.emit('gameover', payload);
     window.setTimeout(() => this.hud.showGameOver(payload), 900);
   }
@@ -186,6 +191,8 @@ export class Game {
     this.throwDirty = false;
     sfx.throwFruit(charge);
     haptics.throwFruit(charge);
+    this.miki.react({ kind: 'throw', charge });
+    this.miki.watch(this.pile.fruits[this.pile.fruits.length - 1]?.mesh ?? null);
     bus.emit('throw', { tier, charge });
   }
 
@@ -198,6 +205,7 @@ export class Game {
       this.hud.setChain(event.chainStep);
       sfx.merge(event.tier, event.chainStep);
       haptics.merge(event.chainStep);
+      this.miki.react({ kind: 'merge', chain: event.chainStep, big: event.isFinal || event.tier >= 8 });
 
       this.particles.burst(event.position, tier.color, event.isFinal ? 40 : 10 + event.tier * 2, 2 + event.tier * 0.4);
       this.particles.burst(event.position, tier.accent, 6 + event.tier, 1.6 + event.tier * 0.3);
@@ -215,6 +223,7 @@ export class Game {
 
     bus.on('newTier', (event) => {
       this.hud.markDiscovered(event.tier);
+      this.miki.react({ kind: 'discover', tier: event.tier });
       if (event.tier >= 5) {
         sfx.celebrate();
         haptics.celebrate();
@@ -224,6 +233,7 @@ export class Game {
     bus.on('land', (event) => {
       sfx.land(event.tier, event.impact);
       haptics.land(event.impact);
+      this.miki.react({ kind: 'land', impact: event.impact });
       if (event.impact > 0.25) {
         this.particles.burst(event.position, 0xfff0d0, Math.round(2 + event.impact * 5), 1.2);
         this.rig.addShake(event.impact * 0.06);
@@ -234,6 +244,7 @@ export class Game {
       sfx.fall();
       sfx.strike(event.strikesLeft);
       haptics.strike();
+      this.miki.react({ kind: 'fall', strikesLeft: event.strikesLeft });
       this.hud.setStrikes(event.strikesLeft);
       this.hud.flashStrike();
       this.popups.spawn(event.position, 'DROPPED!', 'bad');
@@ -259,6 +270,7 @@ export class Game {
 
     this.input.update(rawDt);
     this.rig.update(rawDt);
+    this.miki.update(rawDt, this.rig);
 
     let dt = rawDt;
     if (this.hitstop > 0) {
